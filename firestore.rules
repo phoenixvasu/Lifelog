@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidTimestamp() {
+      return request.resource.data.createdAt is timestamp;
+    }
+    
+    function isValidMood() {
+      return request.resource.data.mood in [1, 2, 3, 4, 5];
+    }
+    
+    function isValidUserData() {
+      return request.resource.data.email is string &&
+             request.resource.data.name is string &&
+             request.resource.data.createdAt is timestamp &&
+             request.resource.data.lastLogin is timestamp &&
+             request.resource.data.preferences is map &&
+             request.resource.data.preferences.theme is string &&
+             request.resource.data.preferences.notifications is map &&
+             request.resource.data.preferences.notifications.enabled is bool &&
+             request.resource.data.preferences.notifications.dailyReminders is bool &&
+             request.resource.data.preferences.notifications.weeklyDigest is bool &&
+             request.resource.data.preferences.notifications.achievements is bool &&
+             request.resource.data.preferences.notifications.quietHours is map &&
+             request.resource.data.preferences.notifications.quietHours.enabled is bool &&
+             request.resource.data.preferences.notifications.quietHours.start is string &&
+             request.resource.data.preferences.notifications.quietHours.end is string;
+    }
+
+    // Journal entries collection rules
+    match /journal_entries/{entryId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        isValidTimestamp() &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0;
+      allow update: if isOwner(resource.data.userId) &&
+        request.resource.data.userId == resource.data.userId &&
+        isValidTimestamp() &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Mood entries collection rules
+    match /mood_entries/{entryId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        isValidTimestamp() &&
+        isValidMood() &&
+        request.resource.data.note is string;
+      allow update: if isOwner(resource.data.userId) &&
+        request.resource.data.userId == resource.data.userId &&
+        isValidTimestamp() &&
+        isValidMood() &&
+        request.resource.data.note is string;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // User preferences collection rules
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isAuthenticated() && 
+        userId == request.auth.uid &&
+        isValidUserData();
+      allow update: if isOwner(userId) &&
+        isValidUserData();
+      allow delete: if isOwner(userId);
+    }
+
+    // FCM tokens collection rules
+    match /fcm_tokens/{tokenId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.token is string;
+      allow update: if isOwner(resource.data.userId) &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.token is string;
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // User statistics collection rules
+    match /user_stats/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isAuthenticated() && 
+        userId == request.auth.uid &&
+        isValidTimestamp() &&
+        request.resource.data.totalEntries is number &&
+        request.resource.data.averageMood is number;
+      allow update: if isOwner(userId) &&
+        isValidTimestamp() &&
+        request.resource.data.totalEntries is number &&
+        request.resource.data.averageMood is number;
+      allow delete: if isOwner(userId);
+    }
+  }
+} 
