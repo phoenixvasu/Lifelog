@@ -135,8 +135,13 @@ export default function DashboardPage() {
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
-              <p className="text-gray-500">Welcome to your dashboard, {user.displayName || user.email}</p>
+            <div className="relative border-4 border-dashed border-gray-200 dark:border-gray-700 rounded-lg h-96 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 dark:from-gray-900 to-purple-50 dark:to-gray-800 animate-gradient-xy">
+              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 animate-fade-in-up">
+                Welcome, {user.displayName || user.email?.split('@')[0]}!
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400 animate-fade-in-up delay-100">
+                Your personal journey starts here.
+              </p>
             </div>
           </div>
         </main>

@@ -1,6 +1,5 @@
 'use client';
 
-
 import { useState, useEffect, useMemo, useRef } from 'react';
 
 import cloud from 'd3-cloud';
@@ -38,6 +37,8 @@ interface WordData {
   rotation?: number;
 
   size?: number;
+
+  color?: string;
 
 }
 
@@ -91,12 +92,11 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const [key, setKey] = useState(0); // Add a key for forcing re-render
+  const [layoutKey, setLayoutKey] = useState(0);
 
 
 
-
-  // Process text and generate word cloud data
+  // Memoized function to process text and generate word cloud data
 
   const processText = useMemo(() => {
 
@@ -104,25 +104,15 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
       const doc = nlp(text);
 
-
-
-      // Extract nouns, verbs, and adjectives
-
       const nouns = doc.nouns().out('array');
 
       const verbs = doc.verbs().out('array');
 
       const adjectives = doc.adjectives().out('array');
 
-
-
-      // Combine all words
-
       const allWords = [...nouns, ...verbs, ...adjectives];
 
 
-
-      // Count word frequency
 
       const wordCount = new Map<string, number>();
 
@@ -140,8 +130,6 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
 
 
-      // Convert to array and sort by frequency
-
       return Array.from(wordCount.entries())
 
         .map(([text, value]) => ({ text, value }))
@@ -156,79 +144,79 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
 
 
-  // Update word cloud when entries or time range changes
+  // Effect to filter entries and process text
 
   useEffect(() => {
 
-    const processEntries = () => {
+    if (entries.length === 0) {
 
-      const now = new Date();
+      setWords([]);
 
-      let filteredEntries = entries;
+      setIsLoading(false);
 
+      return;
 
-
-      // Filter entries based on time range
-
-      if (timeRange !== 'all') {
-
-        const cutoffDate = new Date();
-
-        if (timeRange === 'month') {
-
-          cutoffDate.setMonth(now.getMonth() - 1);
-
-        } else if (timeRange === 'week') {
-
-          cutoffDate.setDate(now.getDate() - 7);
-
-        }
+    }
 
 
 
-        filteredEntries = entries.filter(entry => 
+    console.log('WordCloud received entries:', entries); // Debug: log entries
 
-          new Date(entry.date) >= cutoffDate
+    const now = new Date();
 
-        );
+    let filteredEntries = entries;
+
+
+
+    if (timeRange !== 'all') {
+
+      const cutoffDate = new Date();
+
+      if (timeRange === 'month') {
+
+        cutoffDate.setMonth(now.getMonth() - 1);
+
+      } else if (timeRange === 'week') {
+
+        cutoffDate.setDate(now.getDate() - 7);
 
       }
 
 
 
-      // Combine all entry content
+      filteredEntries = entries.filter(entry => 
 
-      const allText = filteredEntries
+        new Date(entry.date) >= cutoffDate
 
-        .map(entry => entry.content)
+      );
 
-        .join(' ');
-
-
-
-      // Process text and update words
-
-      const processedWords = processText(allText);
-
-      setWords(processedWords);
-
-    };
+    }
 
 
 
-    processEntries();
+    const allContent = filteredEntries.map(entry => entry.content).join(' ');
 
-    setIsLoading(false);
+    const newWordData = processText(allContent);
 
-  }, [entries, timeRange, processText, key]); // Add key to dependencies
+    setWords(newWordData);
+
+    setLayoutKey(prevKey => prevKey + 1);
+
+  }, [entries, timeRange, processText]);
 
 
 
-  // Generate word cloud layout
+  // Combined effect for SVG dimensions and d3-cloud layout
 
   useEffect(() => {
 
-    if (!svgRef.current || words.length === 0) return;
+    if (!svgRef.current) {
+
+      setIsLoading(false); // If ref not available, nothing to load
+
+      return;
+
+    }
 
 
 
@@ -238,17 +226,57 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
 
 
+    if (words.length === 0 || width === 0 || height === 0) {
+
+      setIsLoading(false);
+
+      return;
+
+    }
+
+
+
+    setIsLoading(true);
+
+    console.log('Running d3-cloud layout with dimensions:', { width, height });
+
+
+
+    // Calculate a dynamic max font size based on available space and word frequency
+
+    const maxWordValue = words.reduce((max, d) => Math.max(max, d.value), 0);
+
+    const minFontSize = 10;
+
+    const maxFontSize = Math.min(width, height) * 0.15; // Max 15% of the smaller dimension
+
+
+
+    const scaleFontSize = (value: number) => {
+
+      if (maxWordValue === 0) return minFontSize;
+
+      const ratio = value / maxWordValue;
+
+      return Math.max(minFontSize, ratio * maxFontSize);
+
+    };
+
+
+
     const layout = cloud()
 
-      .size([width, height])
+      .size([width, height]) // Use dynamically calculated dimensions
 
       .words(words.map(d => ({
 
         text: d.text,
 
-        size: 10 + (d.value * 2),
+        size: scaleFontSize(d.value), // Use scaled font size
 
-        value: d.value
+        value: d.value,
+
+        color: COLORS[Math.floor(Math.random() * COLORS.length)]
 
       })))
 
@@ -258,11 +286,13 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
       .font('system-ui')
 
-      .fontSize((d: WordData) => d.size!)
+      .fontSize((d: any) => d.size)
 
-      .on('end', (words: WordData[]) => {
+      .on('end', (laidOutWords: any[]) => {
 
-        setWords(words.map((d: any) => ({
+        console.log('d3-cloud laid out words:', laidOutWords); // Log laid out words
+
+        setWords(laidOutWords.map(d => ({
 
           ...d,
 
@@ -272,7 +302,9 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
           rotation: d.rotate,
 
-          size: d.size
+          size: d.size,
+
+          color: d.color
 
         })));
 
@@ -284,21 +316,19 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
     layout.start();
 
-  }, [words.length, svgRef.current?.clientWidth, svgRef.current?.clientHeight]);
 
 
+    // Cleanup function for d3-cloud layout (optional, but good practice if layout is long-running)
 
+    return () => {
 
+      // If there's a way to stop the layout, put it here. d3-cloud doesn't have a stop method directly.
 
+      // For now, simple cleanup is fine.
 
+    };
 
-
-
-
-
-
-
-
+  }, [words.length, svgRef.current, layoutKey]); // Depend on svgRef.current directly
 
 
 
@@ -306,7 +336,17 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
     setIsLoading(true);
 
-    setKey(prev => prev + 1); // Force re-render
+    setLayoutKey(prevKey => prevKey + 1); // Force layout re-run
+
+  };
+
+
+
+  const handleTimeRangeChange = (range: 'all' | 'month' | 'week') => {
+
+    setTimeRange(range);
+
+    setIsLoading(true); // Show loader when filter changes
 
   };
 
@@ -314,9 +354,9 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
   return (
 
-    <Card className="p-6 bg-white dark:bg-gray-800">
+    <Card className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
 
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
 
@@ -324,29 +364,37 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
         </h2>
 
-        <div className="flex gap-2">
+        <div className="flex items-center space-x-2">
 
           <Button
 
-            variant={timeRange === 'week' ? 'default' : 'outline'}
+            variant="outline"
 
             size="sm"
 
-            onClick={() => setTimeRange('week')}
+            onClick={() => handleTimeRangeChange('all')}
+
+            disabled={timeRange === 'all' || isLoading}
+
+            className="text-gray-700 dark:text-gray-300"
 
           >
 
-            Week
+            All
 
           </Button>
 
           <Button
 
-            variant={timeRange === 'month' ? 'default' : 'outline'}
+            variant="outline"
 
             size="sm"
 
-            onClick={() => setTimeRange('month')}
+            onClick={() => handleTimeRangeChange('month')}
+
+            disabled={timeRange === 'month' || isLoading}
+
+            className="text-gray-700 dark:text-gray-300"
 
           >
 
@@ -356,15 +404,19 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
           <Button
 
-            variant={timeRange === 'all' ? 'default' : 'outline'}
+            variant="outline"
 
             size="sm"
 
-            onClick={() => setTimeRange('all')}
+            onClick={() => handleTimeRangeChange('week')}
+
+            disabled={timeRange === 'week' || isLoading}
+
+            className="text-gray-700 dark:text-gray-300"
 
           >
 
-            All Time
+            Week
 
           </Button>
 
@@ -376,13 +428,15 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
             onClick={handleRefresh}
 
-            className="ml-2"
+            disabled={isLoading}
+
+            className="text-gray-700 dark:text-gray-300"
 
           >
 
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
 
-            <RefreshCw className="w-4 h-4" />
-
+            Refresh
 
           </Button>
 
@@ -392,87 +446,65 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
 
 
-      <div className="h-[400px] w-full relative">
+      <div className="relative w-full h-[400px]">
 
         {isLoading ? (
 
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80">
+          <div className="absolute inset-0 flex items-center justify-center">
 
-
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
 
           </div>
 
-        ) : words.length > 0 ? (
+        ) : (
 
           <svg
 
             ref={svgRef}
 
+            width="100%"
 
-            className="w-full h-full"
+            height="100%"
 
-
-            style={{ fontFamily: 'system-ui' }}
-
+            className="word-cloud"
 
           >
 
-
-            <g transform={`translate(${svgRef.current?.clientWidth! / 2},${svgRef.current?.clientHeight! / 2})`}>
+            <g transform={`translate(${svgRef.current ? svgRef.current.clientWidth / 2 : 0},${svgRef.current ? svgRef.current.clientHeight / 2 : 0})`}>
 
               {words.map((word, i) => (
 
+                <g
 
-                <text
+                  key={i}
 
-
-                  key={word.text}
-
-
-                  textAnchor="middle"
-
-
-                  transform={`translate(${word.x},${word.y}) rotate(${word.rotation})`}
-
-
-                  style={{
-
-
-                    fontSize: `${word.size}px`,
-
-
-                    fill: COLORS[i % COLORS.length],
-
-
-                    opacity: 0.8,
-
-
-                    transition: 'all 0.3s ease',
-
-
-                  }}
-
-
-                  className="hover:opacity-100 hover:scale-110 cursor-pointer"
+                  transform={`translate(${word.x || 0},${word.y || 0}) rotate(${word.rotation || 0})`}
 
                 >
 
+                  <text
 
-                  {word.text}
+                    style={{
 
+                      fontSize: `${word.size}px`,
 
-                </text>
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
 
+                      fill: word.color
 
+                    }}
 
+                    textAnchor="middle"
 
+                    dominantBaseline="middle"
 
+                  >
 
+                    {word.text}
 
+                  </text>
 
-
-
+                </g>
 
               ))}
 
@@ -480,25 +512,7 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
           </svg>
 
-        ) : (
-
-          <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-
-            No words to display
-
-          </div>
-
         )}
-
-      </div>
-
-
-
-      <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-
-        <p>Word cloud shows the most frequently used words in your journal entries.</p>
-
-        <p className="mt-1">Words are processed using natural language processing to identify meaningful terms.</p>
 
       </div>
 
