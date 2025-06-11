@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useJournalStore } from '@/store/journalStore';
 import { JournalEntry } from '@/store/journalStore';
-import { Loader2, Settings, LogOut } from 'lucide-react';
+import { Loader2, Settings, LogOut, PenLine, BarChart3, Filter } from 'lucide-react';
 import MoodGraph from '@/components/MoodGraph';
 import WordCloud from '@/components/WordCloud';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,6 +12,34 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type TimeFilter = '1d' | '1w' | '1m' | '1y' | 'all';
+type MoodFilter = '1' | '2' | '3' | '4' | '5' | 'all';
+
+const timeFilterOptions = [
+  { value: '1d', label: 'Last 24 Hours' },
+  { value: '1w', label: 'Last Week' },
+  { value: '1m', label: 'Last Month' },
+  { value: '1y', label: 'Last Year' },
+  { value: 'all', label: 'All Time' },
+];
+
+const moodFilterOptions = [
+  { value: 'all', label: 'All Moods' },
+  { value: '1', label: '😢 Very Bad' },
+  { value: '2', label: '😕 Bad' },
+  { value: '3', label: '😐 Neutral' },
+  { value: '4', label: '🙂 Good' },
+  { value: '5', label: '😊 Very Good' },
+];
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuthStore();
@@ -23,6 +51,9 @@ export default function DashboardPage() {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [moodFilter, setMoodFilter] = useState<MoodFilter>('all');
+  const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,6 +76,49 @@ export default function DashboardPage() {
     }
   }, [user, fetchEntries]);
 
+  useEffect(() => {
+    if (!journalEntries) return;
+
+    const now = new Date();
+    const filtered = journalEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      
+      // Time filter
+      if (timeFilter !== 'all') {
+        const timeLimit = new Date();
+        switch (timeFilter) {
+          case '1d':
+            timeLimit.setDate(now.getDate() - 1);
+            break;
+          case '1w':
+            timeLimit.setDate(now.getDate() - 7);
+            break;
+          case '1m':
+            timeLimit.setMonth(now.getMonth() - 1);
+            break;
+          case '1y':
+            timeLimit.setFullYear(now.getFullYear() - 1);
+            break;
+        }
+        if (entryDate < timeLimit) return false;
+      }
+
+      // Mood filter
+      if (moodFilter !== 'all' && entry.mood !== moodFilter) {
+        return false;
+      }
+
+      return true;
+    });
+
+    setFilteredEntries(filtered);
+  }, [journalEntries, timeFilter, moodFilter]);
+
+  const resetFilters = () => {
+    setTimeFilter('all');
+    setMoodFilter('all');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !content.trim()) return;
@@ -53,7 +127,9 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Get today's date in user's local timezone
+      const now = new Date();
+      const today = now.toLocaleDateString('en-CA'); // 'en-CA' gives YYYY-MM-DD format
       
       // Add journal entry with mood
       await addEntry({
@@ -135,79 +211,122 @@ export default function DashboardPage() {
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="relative border-4 border-dashed border-gray-200 dark:border-gray-700 rounded-lg h-96 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 dark:from-gray-900 to-purple-50 dark:to-gray-800 animate-gradient-xy">
-              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 animate-fade-in-up">
-                Welcome, {user.displayName || user.email?.split('@')[0]}!
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400 animate-fade-in-up delay-100">
-                Your personal journey starts here.
-              </p>
+            <div className="relative rounded-2xl h-[32rem] overflow-hidden shadow-2xl">
+              {/* Background with gradient and pattern */}
+              <div className="absolute inset-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/90 via-purple-500/90 to-blue-500/90 dark:from-indigo-900/90 dark:via-purple-900/90 dark:to-blue-900/90 animate-gradient-xy" />
+                <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+              </div>
+
+              {/* Content */}
+              <div className="relative h-full flex flex-col items-center justify-center px-4">
+                <div className="text-center space-y-6 max-w-3xl">
+                  <div className="inline-block">
+                    <h1 className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80 dark:from-white dark:to-white/90 animate-fade-in-up">
+                      Welcome, {user.displayName || user.email?.split('@')[0]}!
+                    </h1>
+                  </div>
+                  <p className="text-xl md:text-2xl text-white/90 dark:text-white/80 font-medium animate-fade-in-up delay-100">
+                    Your personal journey starts here.
+                  </p>
+                  <div className="flex justify-center gap-4 mt-8 animate-fade-in-up delay-200">
+                    <button 
+                      onClick={() => {
+                        document.getElementById('journal-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg backdrop-blur-sm transition-all duration-300 font-medium"
+                    >
+                      Start Journaling
+                    </button>
+                    <button 
+                      onClick={() => {
+                        document.getElementById('stats-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-lg backdrop-blur-sm transition-all duration-300 font-medium"
+                    >
+                      View Stats
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/10 to-transparent" />
+              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/10 to-transparent" />
             </div>
           </div>
         </main>
 
         {/* Entry Form */}
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-          <div className="mb-4">
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              How was your day?
-            </label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-              rows={4}
-              placeholder="Write a sentence or two about your day..."
-              required
-              disabled={isSubmitting || journalLoading}
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              How are you feeling?
-            </label>
-            <div className="flex gap-4">
-              {Object.entries(moodEmojis).map(([value, emoji]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setSelectedMood(value)}
-                  className={`flex-1 py-2 px-4 rounded-md text-2xl transition-colors ${
-                    selectedMood === value
-                      ? 'bg-indigo-100 dark:bg-indigo-900'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+        <div id="journal-section" className="mt-8">
+          <Card className="p-6 bg-white dark:bg-gray-800">
+            <div className="flex items-center gap-4 mb-6">
+              <PenLine className="w-6 h-6 text-purple-600" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">How was your day?</h2>
+            </div>
+            <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+              <div className="mb-4">
+                <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  How was your day?
+                </label>
+                <textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                  rows={4}
+                  placeholder="Write a sentence or two about your day..."
+                  required
                   disabled={isSubmitting || journalLoading}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-md">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting || journalLoading || !content.trim()}
-            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <div className="flex items-center justify-center">
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Saving...
+                />
               </div>
-            ) : (
-              'Save Entry'
-            )}
-          </button>
-        </form>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  How are you feeling?
+                </label>
+                <div className="flex gap-4">
+                  {Object.entries(moodEmojis).map(([value, emoji]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSelectedMood(value)}
+                      className={`flex-1 py-2 px-4 rounded-md text-2xl transition-colors ${
+                        selectedMood === value
+                          ? 'bg-indigo-100 dark:bg-indigo-900'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                      disabled={isSubmitting || journalLoading}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting || journalLoading || !content.trim()}
+                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Saving...
+                  </div>
+                ) : (
+                  'Save Entry'
+                )}
+              </button>
+            </form>
+          </Card>
+        </div>
 
         {/* Mood Graph */}
         <div className="mb-8">
@@ -224,45 +343,89 @@ export default function DashboardPage() {
 
         {/* Mood Stats */}
         {journalEntries.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Mood Overview
-            </h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {moodStats.total}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Entries</div>
+          <div id="stats-section" className="mt-8">
+            <Card className="p-6 bg-white dark:bg-gray-800">
+              <div className="flex items-center gap-4 mb-6">
+                <BarChart3 className="w-6 h-6 text-purple-600" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Mood Trends</h2>
               </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {moodStats.averageMood.toFixed(1)}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {moodStats.total}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Entries</div>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Average Mood</div>
-              </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {Object.entries(moodStats.byMood).reduce((a, b) => a[1] > b[1] ? a : b)[0]}
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {moodStats.averageMood.toFixed(1)}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Average Mood</div>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Most Common Mood</div>
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {Object.entries(moodStats.byMood).reduce((a, b) => a[1] > b[1] ? a : b)[0]}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Most Common Mood</div>
+                </div>
               </div>
-            </div>
+            </Card>
           </div>
         )}
 
         {/* Entry History */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Recent Entries
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Recent Entries
+            </h2>
+            <div className="flex items-center gap-2">
+              <Select value={timeFilter} onValueChange={(value: TimeFilter) => setTimeFilter(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Time Period" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeFilterOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={moodFilter} onValueChange={(value: MoodFilter) => setMoodFilter(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Mood" />
+                </SelectTrigger>
+                <SelectContent>
+                  {moodFilterOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(timeFilter !== 'all' || moodFilter !== 'all') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  Reset Filters
+                </Button>
+              )}
+            </div>
+          </div>
+
           {journalLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
             </div>
           ) : (
             <div className="space-y-4">
-              {journalEntries.map((entry: JournalEntry) => (
+              {filteredEntries.map((entry: JournalEntry) => (
                 <div
                   key={entry.id}
                   className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0"
@@ -276,9 +439,11 @@ export default function DashboardPage() {
                   <p className="text-gray-700 dark:text-gray-300">{entry.content}</p>
                 </div>
               ))}
-              {journalEntries.length === 0 && (
+              {filteredEntries.length === 0 && (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No entries yet. Start by writing about your day!
+                  {journalEntries.length === 0 
+                    ? "No entries yet. Start by writing about your day!"
+                    : "No entries match the current filters."}
                 </p>
               )}
             </div>

@@ -9,6 +9,8 @@ import { useAuthStore } from '@/store/authStore';
 import { updateNotificationPreferences, sendTestNotification, initializeMessaging } from '@/lib/firebase/messaging';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface NotificationPreferences {
   dailyReminders: boolean;
@@ -325,26 +327,24 @@ export default function NotificationPreferences() {
     console.log(`[NotificationPreferences] Rendering button for ${key}, enabled: ${isEnabled}`);
     
     return (
-      <Button
-        variant={isEnabled ? "default" : "outline"}
-        className={`w-full flex items-center justify-start gap-3 transition-all duration-200 ${
-          isEnabled 
-            ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-            : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
-        }`}
-        onClick={() => togglePreference(key)}
-        disabled={loading || initialLoading}
-      >
-        <div className={`p-2 rounded-lg ${isEnabled ? 'bg-blue-500' : 'bg-gray-200'}`}>
-          {icon}
+      <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/30">
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="font-medium text-indigo-700 dark:text-indigo-300">{label}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {label === 'Daily Reminders' && 'Get reminded to write in your journal'}
+              {label === 'Weekly Summary' && 'Receive a weekly summary of your mood trends'}
+              {label === 'Mood Alerts' && 'Get notified about significant mood changes'}
+              {label === 'Quiet Hours' && 'Quiet hours for better sleep'}
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col items-start">
-          <span className="font-medium">{label}</span>
-          <span className={`text-sm ${isEnabled ? 'text-blue-100' : 'text-gray-500'}`}>
-            {isEnabled ? 'Enabled' : 'Disabled'}
-          </span>
-        </div>
-      </Button>
+        <Switch
+          checked={isEnabled}
+          onCheckedChange={(checked) => togglePreference(key as keyof NotificationPreferences)}
+          disabled={loading || initialLoading}
+        />
+      </div>
     );
   };
 
@@ -361,53 +361,59 @@ export default function NotificationPreferences() {
 
   console.log('[NotificationPreferences] Rendering main component with preferences:', preferences);
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold flex items-center gap-2">
-          <Bell className="h-6 w-6" />
-          Notification Preferences
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {error && (
-          <Alert variant="destructive" className="bg-red-50 border-red-200">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        {success && (
-          <Alert className="bg-green-50 border-green-200">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-700">{success}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-4">
-          {getPreferenceButton('dailyReminders', <Calendar className="h-5 w-5" />, 'Daily Reminders')}
-          {getPreferenceButton('weeklyDigest', <Zap className="h-5 w-5" />, 'Weekly Digest')}
-          {getPreferenceButton('achievements', <Trophy className="h-5 w-5" />, 'Achievements')}
-          {getPreferenceButton('quietHours', <Clock className="h-5 w-5" />, 'Quiet Hours')}
+    <Card className="p-6 bg-white dark:bg-gray-800 border-l-4 border-indigo-500 dark:border-indigo-400 shadow-lg">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-200 via-purple-200 to-blue-200 dark:from-indigo-900 dark:via-purple-900 dark:to-blue-900 flex items-center justify-center">
+          <Bell className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
         </div>
-
-        <div className="flex flex-col gap-4 pt-4">
-          <Button
-            onClick={handleEnableNotifications}
-            disabled={loading || initialLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {loading ? 'Enabling...' : 'Enable Notifications'}
-          </Button>
-
-          <Button
-            onClick={handleTestNotification}
-            disabled={testLoading || loading || initialLoading}
-            variant="outline"
-            className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
-          >
-            {testLoading ? 'Sending...' : 'Send Test Notification'}
-          </Button>
+        <div>
+          <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-300">
+            Notification Preferences
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Manage your notification settings
+          </p>
         </div>
-      </CardContent>
+      </div>
+
+      <div className="space-y-4">
+        {getPreferenceButton('dailyReminders', <Calendar className="h-5 w-5" />, 'Daily Reminders')}
+        {getPreferenceButton('weeklyDigest', <Zap className="h-5 w-5" />, 'Weekly Summary')}
+        {getPreferenceButton('achievements', <Trophy className="h-5 w-5" />, 'Mood Alerts')}
+        {getPreferenceButton('quietHours', <Clock className="h-5 w-5" />, 'Quiet Hours')}
+      </div>
+
+      <div className="flex flex-col gap-4 pt-4">
+        <Button
+          onClick={handleEnableNotifications}
+          disabled={loading || initialLoading}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+        >
+          {loading ? 'Enabling...' : 'Enable Notifications'}
+        </Button>
+
+        <Button
+          onClick={handleTestNotification}
+          disabled={testLoading || loading || initialLoading}
+          variant="outline"
+          className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
+        >
+          {testLoading ? 'Sending...' : 'Send Test Notification'}
+        </Button>
+      </div>
+
+      {error && (
+        <Alert variant="destructive" className="bg-red-50 border-red-200 mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {success && (
+        <Alert className="bg-green-50 border-green-200 mt-4">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-700">{success}</AlertDescription>
+        </Alert>
+      )}
     </Card>
   );
 } 
