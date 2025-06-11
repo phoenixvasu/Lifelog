@@ -46,6 +46,7 @@ export default function WordCloud({ entries }: WordCloudProps) {
   const [timeRange, setTimeRange] = useState<'all' | 'month' | 'week'>('all');
   const svgRef = useRef<SVGSVGElement>(null);
   const [key, setKey] = useState(0); // Add a key for forcing re-render
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Process text and generate word cloud data
   const processText = useMemo(() => {
@@ -143,6 +144,20 @@ export default function WordCloud({ entries }: WordCloudProps) {
     layout.start();
   }, [words.length, svgRef.current?.clientWidth, svgRef.current?.clientHeight]);
 
+  useEffect(() => {
+    if (svgRef.current) {
+      const updateDimensions = () => {
+        const width = svgRef.current?.clientWidth || 0;
+        const height = svgRef.current?.clientHeight || 0;
+        setDimensions({ width, height });
+      };
+
+      updateDimensions();
+      window.addEventListener('resize', updateDimensions);
+      return () => window.removeEventListener('resize', updateDimensions);
+    }
+  }, []);
+
   const handleRefresh = () => {
     setIsLoading(true);
     setKey(prev => prev + 1); // Force re-render
@@ -182,7 +197,8 @@ export default function WordCloud({ entries }: WordCloudProps) {
             onClick={handleRefresh}
             className="ml-2"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
         </div>
       </div>
@@ -190,30 +206,33 @@ export default function WordCloud({ entries }: WordCloudProps) {
       <div className="h-[400px] w-full relative">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-800/80">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
           </div>
         ) : words.length > 0 ? (
           <svg
             ref={svgRef}
-            className="w-full h-full"
-            style={{ fontFamily: 'system-ui' }}
+            width="100%"
+            height="100%"
+            className="word-cloud"
           >
-            <g transform={`translate(${svgRef.current?.clientWidth! / 2},${svgRef.current?.clientHeight! / 2})`}>
+            <g transform={`translate(${dimensions.width / 2},${dimensions.height / 2})`}>
               {words.map((word, i) => (
-                <text
-                  key={word.text}
-                  textAnchor="middle"
-                  transform={`translate(${word.x},${word.y}) rotate(${word.rotation})`}
-                  style={{
-                    fontSize: `${word.size}px`,
-                    fill: COLORS[i % COLORS.length],
-                    opacity: 0.8,
-                    transition: 'all 0.3s ease',
-                  }}
-                  className="hover:opacity-100 hover:scale-110 cursor-pointer"
+                <g
+                  key={i}
+                  transform={`translate(${word.x || 0},${word.y || 0}) rotate(${word.rotation || 0})`}
                 >
-                  {word.text}
-                </text>
+                  <text
+                    className="fill-current text-gray-700 dark:text-gray-300"
+                    style={{
+                      fontSize: `${word.size}px`,
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                    }}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
+                    {word.text}
+                  </text>
+                </g>
               ))}
             </g>
           </svg>
