@@ -25,3 +25,13 @@ body {
   )
   rgb(var(--background-start-rgb));
 }
+
+/* Add explicit input styles */
+input, textarea, select {
+  @apply text-black dark:text-white bg-white dark:bg-gray-800;
+}
+
+/* Ensure icons are visible */
+svg {
+  @apply text-current;
+}

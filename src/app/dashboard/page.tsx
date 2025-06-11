@@ -122,11 +122,11 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
             <div className="flex items-center space-x-4">
               <Link href="/settings">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                   <Settings className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={handleSignOut}>
+              <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>
