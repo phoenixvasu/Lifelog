@@ -246,9 +246,15 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
     const maxWordValue = words.reduce((max, d) => Math.max(max, d.value), 0);
 
-    const minFontSize = 10;
+    const minFontSize = 12; // Increased from 10 for better mobile readability
 
-    const maxFontSize = Math.min(width, height) * 0.15; // Max 15% of the smaller dimension
+    const maxFontSize = Math.min(
+
+      Math.max(width * 0.1, 40), // Minimum max font size of 40px
+
+      Math.min(width * 0.15, 80) // Maximum max font size of 80px
+
+    );
 
 
 
@@ -258,7 +264,19 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
       const ratio = value / maxWordValue;
 
-      return Math.max(minFontSize, ratio * maxFontSize);
+      return Math.max(
+
+        minFontSize,
+
+        Math.min(
+
+          maxFontSize,
+
+          minFontSize + ((maxFontSize - minFontSize) * (ratio))
+
+        )
+
+      );
 
     };
 
@@ -354,69 +372,63 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
   return (
 
-    <Card className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+    <Card className="p-4 sm:p-6 bg-white dark:bg-gray-800">
 
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
 
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
 
           Word Cloud
 
         </h2>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
 
           <Button
 
-            variant="outline"
+            variant={timeRange === 'all' ? 'default' : 'outline'}
 
             size="sm"
 
             onClick={() => handleTimeRangeChange('all')}
 
-            disabled={timeRange === 'all' || isLoading}
-
-            className="text-gray-700 dark:text-gray-300"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
 
           >
 
-            All
+            All Time
 
           </Button>
 
           <Button
 
-            variant="outline"
+            variant={timeRange === 'month' ? 'default' : 'outline'}
 
             size="sm"
 
             onClick={() => handleTimeRangeChange('month')}
 
-            disabled={timeRange === 'month' || isLoading}
-
-            className="text-gray-700 dark:text-gray-300"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
 
           >
 
-            Month
+            Last Month
 
           </Button>
 
           <Button
 
-            variant="outline"
+            variant={timeRange === 'week' ? 'default' : 'outline'}
 
             size="sm"
 
             onClick={() => handleTimeRangeChange('week')}
 
-            disabled={timeRange === 'week' || isLoading}
-
-            className="text-gray-700 dark:text-gray-300"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
 
           >
 
-            Week
+            Last Week
 
           </Button>
 
@@ -428,13 +440,21 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
             onClick={handleRefresh}
 
-            disabled={isLoading}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
 
-            className="text-gray-700 dark:text-gray-300"
+            disabled={isLoading}
 
           >
 
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? (
+
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+
+            ) : (
+
+              <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+
+            )}
 
             Refresh
 
@@ -446,13 +466,29 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
 
 
-      <div className="relative w-full h-[400px]">
+      <div className="relative h-[300px] sm:h-[400px] w-full">
 
         {isLoading ? (
 
           <div className="absolute inset-0 flex items-center justify-center">
 
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-purple-600" />
+
+          </div>
+
+        ) : words.length === 0 ? (
+
+          <div className="absolute inset-0 flex items-center justify-center">
+
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 text-center px-4">
+
+              {entries.length === 0
+
+                ? "No entries yet. Start by writing about your day!"
+
+                : "No words found in the selected time range."}
+
+            </p>
 
           </div>
 
@@ -462,49 +498,47 @@ export default function WordCloud({ entries }: WordCloudProps) {
 
             ref={svgRef}
 
-            width="100%"
+            className="w-full h-full"
 
-            height="100%"
-
-            className="word-cloud"
+            style={{ minHeight: '300px' }}
 
           >
 
-            <g transform={`translate(${svgRef.current ? svgRef.current.clientWidth / 2 : 0},${svgRef.current ? svgRef.current.clientHeight / 2 : 0})`}>
+            <g transform={`translate(${svgRef.current?.clientWidth ? svgRef.current.clientWidth / 2 : 0},${svgRef.current?.clientHeight ? svgRef.current.clientHeight / 2 : 0})`}>
 
               {words.map((word, i) => (
 
-                <g
+                <text
 
-                  key={i}
+                  key={`${word.text}-${i}`}
 
-                  transform={`translate(${word.x || 0},${word.y || 0}) rotate(${word.rotation || 0})`}
+                  transform={`translate(${word.x},${word.y}) rotate(${word.rotation})`}
+
+                  textAnchor="middle"
+
+                  style={{
+
+                    fontSize: `${word.size}px`,
+
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+
+                    fill: word.color,
+
+                    cursor: 'pointer',
+
+                    userSelect: 'none',
+
+                    WebkitUserSelect: 'none',
+
+                  }}
+
+                  className="transition-all duration-200 hover:opacity-80"
 
                 >
 
-                  <text
+                  {word.text}
 
-                    style={{
-
-                      fontSize: `${word.size}px`,
-
-                      fontFamily: 'system-ui, -apple-system, sans-serif',
-
-                      fill: word.color
-
-                    }}
-
-                    textAnchor="middle"
-
-                    dominantBaseline="middle"
-
-                  >
-
-                    {word.text}
-
-                  </text>
-
-                </g>
+                </text>
 
               ))}
 
@@ -515,6 +549,28 @@ export default function WordCloud({ entries }: WordCloudProps) {
         )}
 
       </div>
+
+
+
+      {words.length > 0 && (
+
+        <div className="mt-4 flex flex-wrap justify-center gap-2 sm:gap-3">
+
+          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+
+            Word count: {words.length}
+
+          </div>
+
+          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+
+            • Most frequent: {words[0]?.text} ({words[0]?.value} times)
+
+          </div>
+
+        </div>
+
+      )}
 
     </Card>
 

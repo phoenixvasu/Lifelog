@@ -191,19 +191,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <header className="bg-white shadow">
+        <header className="bg-white dark:bg-gray-800 shadow rounded-lg mb-4 sm:mb-6">
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <div className="flex items-center space-x-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/settings">
-                <Button variant="ghost" size="icon" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                  <Settings className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white h-8 w-8 sm:h-10 sm:w-10">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                <LogOut className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={handleSignOut} className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white h-8 w-8 sm:h-10 sm:w-10">
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function DashboardPage() {
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="relative rounded-2xl h-[32rem] overflow-hidden shadow-2xl">
+            <div className="relative rounded-2xl h-[24rem] sm:h-[32rem] overflow-hidden shadow-2xl">
               {/* Background with gradient and pattern */}
               <div className="absolute inset-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/90 via-purple-500/90 to-blue-500/90 dark:from-indigo-900/90 dark:via-purple-900/90 dark:to-blue-900/90 animate-gradient-xy" />
@@ -222,19 +222,19 @@ export default function DashboardPage() {
               <div className="relative h-full flex flex-col items-center justify-center px-4">
                 <div className="text-center space-y-6 max-w-3xl">
                   <div className="inline-block">
-                    <h1 className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80 dark:from-white dark:to-white/90 animate-fade-in-up">
+                    <h1 className="text-3xl sm:text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80 dark:from-white dark:to-white/90 animate-fade-in-up">
                       Welcome, {user.displayName || user.email?.split('@')[0]}!
                     </h1>
                   </div>
-                  <p className="text-xl md:text-2xl text-white/90 dark:text-white/80 font-medium animate-fade-in-up delay-100">
+                  <p className="text-lg sm:text-xl md:text-2xl text-white/90 dark:text-white/80 font-medium animate-fade-in-up delay-100">
                     Your personal journey starts here.
                   </p>
-                  <div className="flex justify-center gap-4 mt-8 animate-fade-in-up delay-200">
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 sm:mt-8 animate-fade-in-up delay-200">
                     <button 
                       onClick={() => {
                         document.getElementById('journal-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg backdrop-blur-sm transition-all duration-300 font-medium"
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg backdrop-blur-sm transition-all duration-300 font-medium text-sm sm:text-base"
                     >
                       Start Journaling
                     </button>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                       onClick={() => {
                         document.getElementById('stats-section')?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-lg backdrop-blur-sm transition-all duration-300 font-medium"
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-white/20 hover:bg-white/30 text-white rounded-lg backdrop-blur-sm transition-all duration-300 font-medium text-sm sm:text-base"
                     >
                       View Stats
                     </button>
@@ -264,37 +264,36 @@ export default function DashboardPage() {
               <PenLine className="w-6 h-6 text-purple-600" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">How was your day?</h2>
             </div>
-            <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <div className="mb-4">
-                <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  How was your day?
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="content" className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
+                  Write your daily reflection
                 </label>
                 <textarea
                   id="content"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  rows={4}
+                  className="w-full h-24 sm:h-32 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                   placeholder="Write a sentence or two about your day..."
                   required
                   disabled={isSubmitting || journalLoading}
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <div className="space-y-2">
+                <label className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
                   How are you feeling?
                 </label>
-                <div className="flex gap-4">
+                <div className="flex gap-2 sm:gap-4">
                   {Object.entries(moodEmojis).map(([value, emoji]) => (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setSelectedMood(value)}
-                      className={`flex-1 py-2 px-4 rounded-md text-2xl transition-colors ${
+                      className={`flex-1 py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-xl sm:text-2xl transition-all duration-200 ${
                         selectedMood === value
-                          ? 'bg-indigo-100 dark:bg-indigo-900'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                          ? 'bg-purple-100 dark:bg-purple-900/50 ring-2 ring-purple-500'
+                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                       disabled={isSubmitting || journalLoading}
                     >
@@ -305,7 +304,7 @@ export default function DashboardPage() {
               </div>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-md">
+                <div className="text-red-500 text-sm sm:text-base bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                   {error}
                 </div>
               )}
@@ -313,15 +312,18 @@ export default function DashboardPage() {
               <button
                 type="submit"
                 disabled={isSubmitting || journalLoading || !content.trim()}
-                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg font-medium text-sm sm:text-base transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
-                  <div className="flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Saving...
-                  </div>
+                  <>
+                    <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
                 ) : (
-                  'Save Entry'
+                  <>
+                    <PenLine className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span>Save Entry</span>
+                  </>
                 )}
               </button>
             </form>
@@ -329,7 +331,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Mood Graph */}
-        <div className="mb-8">
+        <div className="mt-8">
           <MoodGraph 
             entries={journalEntries} 
             onEntryClick={(entry) => setSelectedEntry(entry)}
@@ -337,7 +339,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Word Cloud */}
-        <div className="mb-8">
+        <div className="mt-8">
           <WordCloud entries={journalEntries} />
         </div>
 
@@ -349,21 +351,21 @@ export default function DashboardPage() {
                 <BarChart3 className="w-6 h-6 text-purple-600" />
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Mood Trends</h2>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                     {moodStats.total}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Total Entries</div>
                 </div>
                 <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                     {moodStats.averageMood.toFixed(1)}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Average Mood</div>
                 </div>
                 <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                     {Object.entries(moodStats.byMood).reduce((a, b) => a[1] > b[1] ? a : b)[0]}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Most Common Mood</div>
@@ -374,7 +376,7 @@ export default function DashboardPage() {
         )}
 
         {/* Entry History */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Recent Entries
@@ -421,7 +423,7 @@ export default function DashboardPage() {
 
           {journalLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+              <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
             </div>
           ) : (
             <div className="space-y-4">

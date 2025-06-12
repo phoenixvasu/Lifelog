@@ -88,27 +88,27 @@ export default function MoodGraph({ entries, onEntryClick }: MoodGraphProps) {
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
       return (
-        <Card className="p-3 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
-          <p className="font-medium text-gray-900 dark:text-white">{label}</p>
+        <Card className="p-2 sm:p-3 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
+          <p className="font-medium text-sm sm:text-base text-gray-900 dark:text-white">{label}</p>
           {dataPoint.mood !== null ? (
             <>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Average Mood: {moodEmojis[String(Math.round(dataPoint.mood)) as keyof typeof moodEmojis]} ({dataPoint.mood.toFixed(1)})
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Entries: {dataPoint.entries.length}
               </p>
               {dataPoint.entries.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Latest Entry:</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {dataPoint.entries[0].content.substring(0, 50)}...
+                <div className="mt-1 sm:mt-2">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Latest Entry:</p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    {dataPoint.entries[0].content.substring(0, 40)}...
                   </p>
                 </div>
               )}
             </>
           ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No entries</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No entries</p>
           )}
         </Card>
       );
@@ -117,47 +117,47 @@ export default function MoodGraph({ entries, onEntryClick }: MoodGraphProps) {
   };
 
   return (
-    <Card className="p-6 bg-white dark:bg-gray-800">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+    <Card className="p-4 sm:p-6 bg-white dark:bg-gray-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
           Mood Trends
         </h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button
             variant={timeRange === 'day' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setTimeRange('day')}
-            className="flex items-center gap-2"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
             Day
           </Button>
           <Button
             variant={timeRange === 'week' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setTimeRange('week')}
-            className="flex items-center gap-2"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
           >
-            <BarChart3 className="w-4 h-4" />
+            <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
             Week
           </Button>
           <Button
             variant={timeRange === 'month' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setTimeRange('month')}
-            className="flex items-center gap-2"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
           >
-            <TrendingUp className="w-4 h-4" />
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
             Month
           </Button>
         </div>
       </div>
 
-      <div className="h-[400px] w-full">
+      <div className="h-[300px] sm:h-[400px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
             onClick={(data) => {
               if (data.activePayload && onEntryClick) {
                 const entries = data.activePayload[0].payload.entries;
@@ -171,37 +171,45 @@ export default function MoodGraph({ entries, onEntryClick }: MoodGraphProps) {
             <XAxis
               dataKey="date"
               stroke="#6B7280"
-              tick={{ fill: '#6B7280' }}
+              tick={{ fill: '#6B7280', fontSize: 12 }}
               tickLine={{ stroke: '#6B7280' }}
+              interval="preserveStartEnd"
+              minTickGap={20}
             />
             <YAxis
               domain={[1, 5]}
               ticks={[1, 2, 3, 4, 5]}
               tickFormatter={(value) => moodEmojis[value as keyof typeof moodEmojis]}
               stroke="#6B7280"
-              tick={{ fill: '#6B7280' }}
+              tick={{ fill: '#6B7280', fontSize: 12 }}
               tickLine={{ stroke: '#6B7280' }}
+              width={40}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
+            <Tooltip 
+              content={<CustomTooltip />}
+              wrapperStyle={{ outline: 'none' }}
+            />
+            <Legend 
+              wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+            />
             <Line
               type="monotone"
               dataKey="mood"
               stroke="#8B5CF6"
               strokeWidth={2}
-              dot={{ fill: '#8B5CF6', strokeWidth: 2 }}
-              activeDot={{ r: 8, fill: '#8B5CF6' }}
+              dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, fill: '#8B5CF6' }}
               name="Mood"
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-4 flex justify-center gap-4">
+      <div className="mt-4 flex flex-wrap justify-center gap-3 sm:gap-4">
         {Object.entries(moodEmojis).map(([value, emoji]) => (
-          <div key={value} className="text-center">
-            <span className="text-2xl">{emoji}</span>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div key={value} className="text-center px-2">
+            <span className="text-xl sm:text-2xl">{emoji}</span>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               {moodLabels[value as keyof typeof moodLabels]}
             </p>
           </div>
