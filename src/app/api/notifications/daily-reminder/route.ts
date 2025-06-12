@@ -17,23 +17,21 @@ const db = getFirestore();
 
 export async function GET() {
   try {
-    // Get current time in IST
-    const now = new Date();
-    const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
-    const hour = ist.getUTCHours();
-    const minute = ist.getUTCMinutes();
-    const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-
-    // Only send at 15:45 IST
-    if (currentTime !== '15:45') {
-      return NextResponse.json({ message: 'Not 15:45 IST, skipping.' }, { status: 200 });
-    }
-
     // Query users
     const usersSnapshot = await db.collection('users')
       .where('fcmToken', '!=', null)
       .where('notificationPreferences.dailyReminders', '==', true)
       .get();
+
+    const userCount = usersSnapshot.size;
+    const fcmTokens: string[] = [];
+    usersSnapshot.forEach(doc => {
+      const userData = doc.data();
+      fcmTokens.push(userData.fcmToken);
+    });
+
+    console.log(`[Daily Reminder] Found ${userCount} users with daily reminders enabled.`);
+    console.log(`[Daily Reminder] FCM Tokens:`, fcmTokens);
 
     if (usersSnapshot.empty) {
       return NextResponse.json({ message: 'No users to notify.' }, { status: 200 });
@@ -70,6 +68,7 @@ export async function GET() {
 
     return NextResponse.json({
       message: `Sent reminders to ${successful} users, failed for ${failed}`,
+      tokens: fcmTokens,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
