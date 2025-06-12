@@ -143,7 +143,7 @@ export default function NotificationPreferences() {
             <div>
               <p className="font-medium text-indigo-700 dark:text-indigo-300">Daily Reminders</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Get reminded to write in your journal every day at 15:45 IST
+                Get reminded to write in your journal every day
               </p>
             </div>
           </div>
