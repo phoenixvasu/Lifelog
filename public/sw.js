@@ -1,4 +1,6 @@
 self.addEventListener("push", function (event) {
+  console.log("[Service Worker] Push event received:", event); // <-- Add this line
+
   if (!event.data) return;
 
   try {
