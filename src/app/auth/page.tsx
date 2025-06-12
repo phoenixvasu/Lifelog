@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { ArrowLeft, Loader2, Mail, CheckCircle2, AlertCircle, X } from 'lucide-react';
@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-export default function AuthPage() {
+// Separate the main auth component
+function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { 
@@ -393,5 +394,29 @@ export default function AuthPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// Loading component for Suspense
+function AuthPageLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div className="flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-600 dark:text-purple-400" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main page component with Suspense
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthPageLoading />}>
+      <AuthPageContent />
+    </Suspense>
   );
 }
