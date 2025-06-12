@@ -63,15 +63,28 @@ export async function GET(request: Request) {
         },
         token: userData.fcmToken,
       };
-      return messaging.send(message);
+      try {
+        await messaging.send(message);
+        return { status: 'fulfilled' };
+      } catch (err: any) {
+        // Log error code and message for debugging
+        console.error(
+          `[Daily Reminder] Failed to send to token ${userData.fcmToken}:`,
+          err.code,
+          err.message
+        );
+        return { status: 'rejected', code: err.code, message: err.message, token: userData.fcmToken };
+      }
     }));
 
     const successful = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
+    const failedDetails = results.filter(r => r.status === 'rejected');
 
     return NextResponse.json({
       message: `Sent reminders to ${successful} users, failed for ${failed}`,
       tokens: fcmTokens,
+      failedDetails,
       timestamp: new Date().toISOString()
     }, { headers });
   } catch (error) {
