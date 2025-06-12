@@ -1,4 +1,4 @@
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { app } from '../firebase/client';
 
 let messagingInstance: ReturnType<typeof getMessaging> | null = null;
@@ -127,7 +127,7 @@ export async function unregisterNotifications(): Promise<void> {
     const messaging = await getMessagingInstance();
     const token = await getToken(messaging);
     if (token) {
-      await messaging.deleteToken();
+      await deleteToken(messaging);
     }
     fcmTokenPromise = null;
   } catch (error) {
