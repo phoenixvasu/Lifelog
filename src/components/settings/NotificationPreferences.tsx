@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
@@ -13,79 +13,139 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface NotificationPreferences {
   dailyReminders: boolean;
+  fcmToken?: string | null;
 }
 
 export default function NotificationPreferences() {
   const { user, loading: authLoading } = useAuthStore();
   const [preferences, setPreferences] = useState<NotificationPreferences>({
-    dailyReminders: false
+    dailyReminders: false,
+    fcmToken: null
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [notificationSupport, setNotificationSupport] = useState<{
+    supported: boolean;
+    permission: NotificationPermission;
+    serviceWorker: boolean;
+  } | null>(null);
 
+  // Check notification support on mount
   useEffect(() => {
-    const checkNotifications = async () => {
+    const checkSupport = async () => {
+      const support = await checkNotificationSupport();
+      setNotificationSupport(support);
+      if (!support.supported) {
+        setError('Your browser does not support notifications');
+      } else if (support.permission === 'denied') {
+        setError('Please enable notifications in your browser settings');
+      }
+    };
+    checkSupport();
+  }, []);
+
+  // Load user preferences
+  useEffect(() => {
+    const loadPreferences = async () => {
       if (!user) {
         setInitialLoading(false);
         return;
       }
+
       try {
-        const support = await checkNotificationSupport();
-        if (!support.supported) {
-          setInitialLoading(false);
-          return;
-        }
         const userRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userRef);
-        if (userDoc.exists() && userDoc.data().notificationPreferences) {
-          setPreferences(userDoc.data().notificationPreferences);
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setPreferences({
+            dailyReminders: data.notificationPreferences?.dailyReminders || false,
+            fcmToken: data.fcmToken || null
+          });
         }
-      } catch {
-        // ignore
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+        setError('Failed to load notification preferences');
       } finally {
         setInitialLoading(false);
       }
     };
-    checkNotifications();
+
+    loadPreferences();
+  }, [user]);
+
+  const updateNotificationPreferences = useCallback(async (newPreferences: NotificationPreferences) => {
+    if (!user) return;
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        notificationPreferences: {
+          dailyReminders: newPreferences.dailyReminders
+        },
+        fcmToken: newPreferences.fcmToken,
+        updatedAt: serverTimestamp()
+      });
+      setPreferences(newPreferences);
+      setSuccess(newPreferences.dailyReminders ? 
+        'Daily reminders enabled successfully' : 
+        'Daily reminders disabled successfully'
+      );
+      setError(null);
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      setError('Failed to update notification settings');
+      setSuccess(null);
+      throw error;
+    }
   }, [user]);
 
   const handleDailyRemindersToggle = async (checked: boolean) => {
     if (!user) {
-      toast.error('Please sign in to enable notifications');
+      setError('Please sign in to enable notifications');
       return;
     }
+
+    if (!notificationSupport?.supported) {
+      setError('Your browser does not support notifications');
+      return;
+    }
+
+    if (notificationSupport.permission === 'denied') {
+      setError('Please enable notifications in your browser settings');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       setSuccess(null);
+
+      let token = preferences.fcmToken;
+
       if (checked) {
-        const token = await registerForNotifications();
-        if (!token) throw new Error('Failed to register for notifications');
-        const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
-          fcmToken: token,
-          notificationPreferences: { dailyReminders: true },
-          updatedAt: new Date()
-        });
-        setPreferences({ dailyReminders: true });
-        toast.success('Daily reminders enabled successfully');
-        setSuccess('Daily reminders enabled successfully');
+        // Only get a new token if we don't have one
+        if (!token) {
+          token = await registerForNotifications();
+          if (!token) {
+            throw new Error('Failed to register for notifications. Please check your browser settings.');
+          }
+        }
       } else {
-        const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
-          fcmToken: null,
-          notificationPreferences: { dailyReminders: false },
-          updatedAt: new Date()
-        });
-        setPreferences({ dailyReminders: false });
-        toast.success('Daily reminders disabled successfully');
-        setSuccess('Daily reminders disabled successfully');
+        // When disabling, we keep the token but update preferences
+        token = preferences.fcmToken;
       }
+
+      await updateNotificationPreferences({
+        dailyReminders: checked,
+        fcmToken: token
+      });
+
     } catch (error) {
-      setError('Failed to update notification settings');
-      toast.error('Failed to update notification settings');
+      console.error('Error toggling notifications:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update notification settings');
+      setSuccess(null);
     } finally {
       setLoading(false);
     }
@@ -150,7 +210,7 @@ export default function NotificationPreferences() {
           <Switch
             checked={preferences.dailyReminders}
             onCheckedChange={handleDailyRemindersToggle}
-            disabled={loading || !user}
+            disabled={loading || !user || !notificationSupport?.supported || notificationSupport?.permission === 'denied'}
           />
         </div>
       </div>
@@ -161,6 +221,7 @@ export default function NotificationPreferences() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+      
       {success && (
         <Alert className="bg-green-50 border-green-200 mt-4">
           <CheckCircle2 className="h-4 w-4 text-green-600" />

@@ -1,53 +1,137 @@
-import { getMessaging, getToken } from 'firebase/messaging';
-import { app } from '@/lib/firebase/client';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { app } from '../firebase/client';
 
-export async function registerForNotifications() {
+let messagingInstance: ReturnType<typeof getMessaging> | null = null;
+let fcmTokenPromise: Promise<string | null> | null = null;
+
+export async function checkNotificationSupport(): Promise<{
+  supported: boolean;
+  permission: NotificationPermission;
+  serviceWorker: boolean;
+}> {
+  if (typeof window === 'undefined') {
+    return { supported: false, permission: 'denied', serviceWorker: false };
+  }
+
+  const supported = 'Notification' in window && 'serviceWorker' in navigator;
+  const permission = supported ? Notification.permission : 'denied';
+  const serviceWorker = supported && 'serviceWorker' in navigator;
+
+  return { supported, permission, serviceWorker };
+}
+
+async function getMessagingInstance() {
+  if (!messagingInstance) {
+    try {
+      messagingInstance = getMessaging(app);
+    } catch (error) {
+      console.error('Error initializing Firebase Messaging:', error);
+      throw new Error('Failed to initialize notifications');
+    }
+  }
+  return messagingInstance;
+}
+
+async function ensureServiceWorkerRegistered(): Promise<ServiceWorkerRegistration> {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service workers are not supported');
+  }
+
   try {
-    // Check if the browser supports notifications
-    if (!('Notification' in window)) {
-      console.log('This browser does not support notifications');
-      return null;
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration) {
+      return registration;
     }
 
-    // Check if we have permission
-    if (Notification.permission === 'default') {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        console.log('Notification permission denied');
-        return null;
-      }
-    } else if (Notification.permission === 'denied') {
-      console.log('Notification permission denied');
-      return null;
-    }
-
-    // Always wait for the service worker to be ready (active)
-    // Register if not already registered, then wait for ready
-    if (!navigator.serviceWorker.controller) {
-      await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registered');
-    }
-    const registration = await navigator.serviceWorker.ready;
-
-    // Get FCM token
-    const messaging = getMessaging(app);
-    const token = await getToken(messaging, {
-      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration: registration
-    });
-
-    console.log('FCM Token:', token);
-    return token;
+    const newRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    console.log('Service Worker registered:', newRegistration);
+    return newRegistration;
   } catch (error) {
-    console.error('Error registering for notifications:', error);
-    return null;
+    console.error('Error registering service worker:', error);
+    throw new Error('Failed to register service worker');
   }
 }
 
-export async function checkNotificationSupport() {
-  return {
-    supported: 'Notification' in window,
-    permission: Notification.permission,
-    serviceWorker: 'serviceWorker' in navigator
-  };
+export async function registerForNotifications(): Promise<string | null> {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    // Check browser support first
+    const { supported, permission } = await checkNotificationSupport();
+    if (!supported) {
+      throw new Error('Notifications are not supported in this browser');
+    }
+
+    // Request permission if needed
+    if (permission !== 'granted') {
+      const newPermission = await Notification.requestPermission();
+      if (newPermission !== 'granted') {
+        throw new Error('Notification permission denied');
+      }
+    }
+
+    // Ensure service worker is registered
+    await ensureServiceWorkerRegistered();
+
+    // Get or create FCM token
+    if (!fcmTokenPromise) {
+      fcmTokenPromise = (async () => {
+        try {
+          const messaging = await getMessagingInstance();
+          const token = await getToken(messaging, {
+            vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+            serviceWorkerRegistration: await navigator.serviceWorker.getRegistration()
+          });
+
+          if (!token) {
+            throw new Error('Failed to get FCM token');
+          }
+
+          // Set up message listener
+          onMessage(messaging, (payload) => {
+            console.log('Message received:', payload);
+            // Handle foreground messages here
+            if (payload.notification) {
+              new Notification(payload.notification.title || 'New Notification', {
+                body: payload.notification.body,
+                icon: payload.notification.icon || '/icon-192x192.png'
+              });
+            }
+          });
+
+          return token;
+        } catch (error) {
+          console.error('Error getting FCM token:', error);
+          fcmTokenPromise = null; // Reset promise on error
+          throw error;
+        }
+      })();
+    }
+
+    return await fcmTokenPromise;
+  } catch (error) {
+    console.error('Error registering for notifications:', error);
+    fcmTokenPromise = null; // Reset promise on error
+    throw error;
+  }
+}
+
+export async function unregisterNotifications(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const messaging = await getMessagingInstance();
+    const token = await getToken(messaging);
+    if (token) {
+      await messaging.deleteToken();
+    }
+    fcmTokenPromise = null;
+  } catch (error) {
+    console.error('Error unregistering notifications:', error);
+    throw error;
+  }
 }
