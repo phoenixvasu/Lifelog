@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/components/theme-provider'
+import AuthInitializer from '@/components/AuthInitializer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -35,10 +36,11 @@ export default function RootLayout({
           disableTransitionOnChange
           storageKey="lifelog-theme"
         >
+          <AuthInitializer />
           {children}
           <Toaster />
         </ThemeProvider>
       </body>
     </html>
   )
-} 
+}

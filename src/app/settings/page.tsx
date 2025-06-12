@@ -23,7 +23,7 @@ import NotificationPreferences from '@/components/settings/NotificationPreferenc
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 export default function SettingsPage() {
-  const { user } = useAuthStore();
+  const { user, loading } = useAuthStore();
   const router = useRouter();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -33,16 +33,24 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       setLocalStorageSize(getLocalStorageSize());
     }
   }, []);
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <span className="text-lg text-indigo-600 dark:text-indigo-300">Loading...</span>
+      </div>
+    );
+  }
 
   if (!user) {
     return null;

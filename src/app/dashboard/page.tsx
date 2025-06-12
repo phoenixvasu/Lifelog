@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 <div className="text-center space-y-6 max-w-3xl">
                   <div className="inline-block">
                     <h1 className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80 dark:from-white dark:to-white/90 animate-fade-in-up">
-                      Welcome, {user.displayName || user.email?.split('@')[0]}!
+                      Welcome, {user.displayName || user.name || user.email?.split('@')[0]}!
                     </h1>
                   </div>
                   <p className="text-xl md:text-2xl text-white/90 dark:text-white/80 font-medium animate-fade-in-up delay-100">

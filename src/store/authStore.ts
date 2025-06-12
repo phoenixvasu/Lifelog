@@ -7,7 +7,9 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   fetchSignInMethodsForEmail,
-  AuthError
+  AuthError,
+  updateProfile,
+  reload
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
@@ -119,10 +121,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create user document
-      await createUserDocument(user, name);
+      // Set displayName in Firebase Auth profile
+      await updateProfile(user, { displayName: name });
+      await reload(user); // reloads the user
+      const updatedUser = auth.currentUser; // get the latest user with displayName
 
-      set({ user, loading: false });
+      // Create user document
+      if (!updatedUser) {
+        throw new Error('Failed to retrieve user after sign up.');
+      }
+      await createUserDocument(updatedUser, name);
+
+      set({ user: updatedUser, loading: false }); // set the updated user in store
     } catch (error) {
       console.error('Sign up error:', error);
       set({ error: handleAuthError(error), loading: false });
@@ -201,21 +211,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initialize: () => {
     console.log('Initializing auth state...');
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
-      if (user) {
-        try {
-          // Update last login time
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            lastLogin: serverTimestamp()
-          });
-        } catch (error) {
-          console.error('Error updating last login:', error);
-        }
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       set({ user, loading: false });
     });
     return unsubscribe;
   }
-})); 
+}));
