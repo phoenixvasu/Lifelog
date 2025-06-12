@@ -1,186 +1,78 @@
 import { NextResponse } from 'next/server';
-import { getMessaging } from 'firebase-admin/messaging';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
 
-// Initialize Firebase Admin if not already initialized
 if (!getApps().length) {
-  try {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-    console.log('[Daily Reminder API] Firebase Admin initialized successfully');
-  } catch (error) {
-    console.error('[Daily Reminder API] Error initializing Firebase Admin:', error);
-  }
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
 }
 
 const db = getFirestore();
 
 export async function GET() {
-  console.log('[Daily Reminder API] Daily reminder endpoint called at:', new Date().toISOString());
-  
   try {
     // Get current time in IST
     const now = new Date();
-    const istHour = (now.getUTCHours() + 5) % 24; // Convert to IST
-    const istMinute = now.getUTCMinutes();
-    const currentTime = `${istHour.toString().padStart(2, '0')}:${istMinute.toString().padStart(2, '0')}`;
-    
-    console.log('[Daily Reminder API] Current time in IST:', currentTime);
+    const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+    const hour = ist.getUTCHours();
+    const minute = ist.getUTCMinutes();
+    const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 
-    // First get all users with FCM tokens
-    const usersSnapshot = await db.collection('users')
-      .where('fcmToken', '!=', null)
-      .get();
-
-    console.log('[Daily Reminder API] Found users with FCM tokens:', usersSnapshot.size);
-
-    if (usersSnapshot.empty) {
-      console.log('[Daily Reminder API] No users with FCM tokens found');
-      return NextResponse.json({ 
-        message: 'No users with FCM tokens found',
-        count: 0,
-        timestamp: new Date().toISOString()
-      }, { status: 200 });
+    // Only send at 15:45 IST
+    if (currentTime !== '15:45') {
+      return NextResponse.json({ message: 'Not 15:45 IST, skipping.' }, { status: 200 });
     }
 
-    // Filter users with daily reminders enabled and check their reminder time
-    const eligibleUsers = usersSnapshot.docs.filter(doc => {
-      const userData = doc.data();
-      const preferences = userData.notificationPreferences;
-      const isEnabled = preferences?.dailyReminders === true;
-      const userReminderTime = preferences?.reminderTime || '12:10';
-      
-      console.log(`[Daily Reminder API] User ${doc.id} preferences:`, {
-        hasPreferences: !!preferences,
-        dailyReminders: preferences?.dailyReminders,
-        reminderTime: userReminderTime,
-        currentTime,
-        isEnabled,
-        timeMatches: userReminderTime === currentTime
-      });
-      
-      return isEnabled && userReminderTime === currentTime;
-    });
+    // Query users
+    const usersSnapshot = await db.collection('users')
+      .where('fcmToken', '!=', null)
+      .where('notificationPreferences.dailyReminders', '==', true)
+      .get();
 
-    console.log('[Daily Reminder API] Users eligible for reminder at', currentTime, ':', eligibleUsers.length);
-
-    if (eligibleUsers.length === 0) {
-      return NextResponse.json({ 
-        message: 'No users with daily reminders enabled found',
-        count: 0,
-        timestamp: new Date().toISOString()
-      }, { status: 200 });
+    if (usersSnapshot.empty) {
+      return NextResponse.json({ message: 'No users to notify.' }, { status: 200 });
     }
 
     const messaging = getMessaging();
-    const notifications = eligibleUsers.map(async (doc) => {
+    const results = await Promise.allSettled(usersSnapshot.docs.map(async doc => {
       const userData = doc.data();
-      console.log('[Daily Reminder API] Sending reminder to user:', doc.id);
-      
-      try {
-        const message = {
-          token: userData.fcmToken,
+      const message = {
+        notification: {
+          title: 'Daily Journal Reminder',
+          body: 'Time to write in your journal! Take a moment to reflect on your day.',
+        },
+        webpush: {
           notification: {
-            title: 'Time to Log Your Day',
-            body: 'Don\'t forget to write in your journal today!',
+            icon: '/icon.png',
+            badge: '/badge.png',
+            actions: [{ action: 'open', title: 'Write Now' }]
           },
-          data: {
-            type: 'daily_reminder',
-            timestamp: new Date().toISOString(),
-            action: 'open_journal'
-          },
-          android: {
-            priority: 'high',
-            notification: {
-              sound: 'default',
-              channelId: 'daily_reminders'
-            }
-          },
-          apns: {
-            payload: {
-              aps: {
-                sound: 'default'
-              }
-            }
-          }
-        };
+          fcmOptions: { link: '/journal/new' }
+        },
+        data: {
+          type: 'daily_reminder',
+          timestamp: new Date().toISOString(),
+          click_action: '/journal/new'
+        },
+        token: userData.fcmToken,
+      };
+      return messaging.send(message);
+    }));
 
-        console.log('[Daily Reminder API] Sending FCM message:', {
-          userId: doc.id,
-          token: userData.fcmToken.substring(0, 10) + '...',
-          messageType: 'daily_reminder'
-        });
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
 
-        const response = await messaging.send(message);
-        console.log('[Daily Reminder API] Successfully sent reminder to user:', doc.id, response);
-        return { success: true, userId: doc.id };
-      } catch (error) {
-        console.error('[Daily Reminder API] Error sending reminder to user:', doc.id, error);
-        // If token is invalid, remove it from the user's document
-        if (error instanceof Error && error.message.includes('messaging/invalid-registration-token')) {
-          try {
-            await db.collection('users').doc(doc.id).update({
-              fcmToken: null,
-              'notificationPreferences.dailyReminders': false
-            });
-            console.log('[Daily Reminder API] Removed invalid FCM token for user:', doc.id);
-          } catch (updateError) {
-            console.error('[Daily Reminder API] Error updating user document:', updateError);
-          }
-        }
-        return { success: false, userId: doc.id, error };
-      }
-    });
-
-    // Send notifications to all users and collect results
-    const results = await Promise.all(notifications);
-    const successfulSends = results.filter(r => r.success).length;
-    const failedSends = results.filter(r => !r.success).length;
-
-    console.log('[Daily Reminder API] Reminder results:', {
-      total: results.length,
-      successful: successfulSends,
-      failed: failedSends,
+    return NextResponse.json({
+      message: `Sent reminders to ${successful} users, failed for ${failed}`,
       timestamp: new Date().toISOString()
     });
-
-    if (failedSends > 0) {
-      console.warn('[Daily Reminder API] Some reminders failed to send');
-      return NextResponse.json({ 
-        message: 'Some reminders failed to send',
-        results: {
-          total: results.length,
-          successful: successfulSends,
-          failed: failedSends,
-          timestamp: new Date().toISOString()
-        }
-      }, { status: 207 }); // 207 Multi-Status
-    }
-
-    return NextResponse.json({ 
-      message: 'Daily reminders sent successfully',
-      results: {
-        total: results.length,
-        successful: successfulSends,
-        failed: failedSends,
-        timestamp: new Date().toISOString()
-      }
-    });
   } catch (error) {
-    console.error('[Daily Reminder API] Error in daily reminder endpoint:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to send daily reminders',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
-} 
+}

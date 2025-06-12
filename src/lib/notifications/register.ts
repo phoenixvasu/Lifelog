@@ -21,20 +21,20 @@ export async function registerForNotifications() {
       return null;
     }
 
-    // Register service worker
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
+    // Register service worker (if not already registered)
+    let registration: ServiceWorkerRegistration;
+    if (navigator.serviceWorker.controller) {
+      registration = await navigator.serviceWorker.ready;
+    } else {
+      registration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service Worker registered:', registration);
-    } catch (error) {
-      console.error('Service Worker registration failed:', error);
-      return null;
     }
 
     // Get FCM token
     const messaging = getMessaging(app);
     const token = await getToken(messaging, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration: await navigator.serviceWorker.ready
+      serviceWorkerRegistration: registration
     });
 
     console.log('FCM Token:', token);
@@ -51,4 +51,4 @@ export async function checkNotificationSupport() {
     permission: Notification.permission,
     serviceWorker: 'serviceWorker' in navigator
   };
-} 
+}
