@@ -284,13 +284,13 @@ export default function DashboardPage() {
                 <label className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
                   How are you feeling?
                 </label>
-                <div className="flex gap-2 sm:gap-4">
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                   {Object.entries(moodEmojis).map(([value, emoji]) => (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setSelectedMood(value)}
-                      className={`flex-1 py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-xl sm:text-2xl transition-all duration-200 ${
+                      className={`aspect-square flex items-center justify-center rounded-lg text-lg sm:text-xl md:text-2xl transition-all duration-200 ${
                         selectedMood === value
                           ? 'bg-purple-100 dark:bg-purple-900/50 ring-2 ring-purple-500'
                           : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -377,13 +377,13 @@ export default function DashboardPage() {
 
         {/* Entry History */}
         <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Recent Entries
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <Select value={timeFilter} onValueChange={(value: TimeFilter) => setTimeFilter(value)}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-full sm:w-[140px]">
                   <SelectValue placeholder="Time Period" />
                 </SelectTrigger>
                 <SelectContent>
@@ -396,7 +396,7 @@ export default function DashboardPage() {
               </Select>
 
               <Select value={moodFilter} onValueChange={(value: MoodFilter) => setMoodFilter(value)}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-full sm:w-[140px]">
                   <SelectValue placeholder="Mood" />
                 </SelectTrigger>
                 <SelectContent>
@@ -413,7 +413,7 @@ export default function DashboardPage() {
                   variant="ghost"
                   size="sm"
                   onClick={resetFilters}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  className="w-full sm:w-auto text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 >
                   Reset Filters
                 </Button>

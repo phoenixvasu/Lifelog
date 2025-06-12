@@ -89,8 +89,8 @@ export default function AuthPage() {
     if (resetEmailSent) {
       return (
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Check your email</h3>
-          <p className="text-gray-600">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Check your email</h3>
+          <p className="text-gray-600 dark:text-gray-400">
             We've sent a password reset link to {formData.email}
           </p>
           <button
@@ -98,7 +98,7 @@ export default function AuthPage() {
               setIsResetPassword(false);
               setResetEmailSent(false);
             }}
-            className="mt-4 text-indigo-600 hover:text-indigo-500"
+            className="mt-4 text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
           >
             Back to sign in
           </button>
@@ -110,7 +110,7 @@ export default function AuthPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isLogin && !isResetPassword && (
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Name
             </label>
             <input
@@ -119,7 +119,7 @@ export default function AuthPage() {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 dark:focus:border-purple-400 dark:focus:ring-purple-400 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               required
               disabled={isSubmitting}
             />
@@ -127,7 +127,7 @@ export default function AuthPage() {
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Email
           </label>
           <input
@@ -136,7 +136,7 @@ export default function AuthPage() {
             name="email"
             value={formData.email}
             onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 dark:focus:border-purple-400 dark:focus:ring-purple-400 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             required
             disabled={isSubmitting}
           />
@@ -144,7 +144,7 @@ export default function AuthPage() {
 
         {!isResetPassword && (
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Password
             </label>
             <input
@@ -153,7 +153,7 @@ export default function AuthPage() {
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 dark:focus:border-purple-400 dark:focus:ring-purple-400 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               required
               disabled={isSubmitting}
               minLength={6}
@@ -166,7 +166,7 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => setIsResetPassword(true)}
-              className="text-sm text-indigo-600 hover:text-indigo-500"
+              className="text-sm text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSubmitting}
             >
               Forgot your password?
@@ -177,7 +177,7 @@ export default function AuthPage() {
         <button
           type="submit"
           disabled={isSubmitting || loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:focus:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
         >
           {isSubmitting ? (
             <div className="flex items-center">
@@ -198,7 +198,7 @@ export default function AuthPage() {
               setResetEmailSent(false);
               clearError();
             }}
-            className="text-sm text-indigo-600 hover:text-indigo-500"
+            className="text-sm text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSubmitting}
           >
             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
@@ -209,23 +209,23 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <button
           onClick={() => router.push('/')}
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isSubmitting}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to home
         </button>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           {isResetPassword ? 'Reset Password' : isLogin ? 'Sign in to your account' : 'Create your account'}
         </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {renderForm()}
         </div>
       </div>
