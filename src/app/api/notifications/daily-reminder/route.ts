@@ -73,6 +73,14 @@ export async function GET(request: Request) {
           err.code,
           err.message
         );
+        // Remove invalid tokens from Firestore
+        if (
+          err.code === 'messaging/invalid-registration-token' ||
+          err.code === 'messaging/registration-token-not-registered'
+        ) {
+          await doc.ref.update({ fcmToken: null });
+          console.log(`[Daily Reminder] Removed invalid token: ${userData.fcmToken}`);
+        }
         return { status: 'rejected', code: err.code, message: err.message, token: userData.fcmToken };
       }
     }));
