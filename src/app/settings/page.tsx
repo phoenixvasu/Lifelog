@@ -19,7 +19,6 @@ import {
 } from '@/lib/utils/data-management';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import NotificationPreferences from '@/components/settings/NotificationPreferences';
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 export default function SettingsPage() {
@@ -205,8 +204,6 @@ export default function SettingsPage() {
               </div>
             </div>
           </Card>
-
-          <NotificationPreferences />
 
           <Card className="p-6 bg-white dark:bg-gray-800 border-l-4 border-indigo-500 dark:border-indigo-400 shadow-lg">
             <div className="flex items-center gap-4 mb-6">
