@@ -21,14 +21,13 @@ export async function registerForNotifications() {
       return null;
     }
 
-    // Register service worker (if not already registered)
-    let registration: ServiceWorkerRegistration;
-    if (navigator.serviceWorker.controller) {
-      registration = await navigator.serviceWorker.ready;
-    } else {
-      registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registered:', registration);
+    // Always wait for the service worker to be ready (active)
+    // Register if not already registered, then wait for ready
+    if (!navigator.serviceWorker.controller) {
+      await navigator.serviceWorker.register('/sw.js');
+      console.log('Service Worker registered');
     }
+    const registration = await navigator.serviceWorker.ready;
 
     // Get FCM token
     const messaging = getMessaging(app);
