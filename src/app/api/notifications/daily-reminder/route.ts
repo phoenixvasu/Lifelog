@@ -15,7 +15,10 @@ if (!getApps().length) {
 
 const db = getFirestore();
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Disable Vercel/Next.js caching for this API route
+  const headers = { 'Cache-Control': 'no-store' };
+
   try {
     // Query users
     const usersSnapshot = await db.collection('users')
@@ -70,8 +73,8 @@ export async function GET() {
       message: `Sent reminders to ${successful} users, failed for ${failed}`,
       tokens: fcmTokens,
       timestamp: new Date().toISOString()
-    });
+    }, { headers });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500, headers });
   }
 }
