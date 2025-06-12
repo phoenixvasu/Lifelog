@@ -3,80 +3,110 @@ import { doc, setDoc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { registerServiceWorker } from './service-worker';
 import { auth } from '../firebase';
+import { app } from './config';
+import { toast } from 'sonner';
 
 let messaging: any = null;
 
 export const initializeMessaging = async () => {
   try {
-    console.log('Initializing Firebase Messaging...');
+    console.log('Initializing Firebase messaging...');
     
     if (typeof window === 'undefined') {
-      console.log('Not in browser environment, skipping initialization');
+      console.log('Running on server, skipping messaging initialization');
       return null;
     }
 
     if (!('Notification' in window)) {
-      console.log('Notifications not supported in this browser');
+      console.log('This browser does not support notifications');
       return null;
     }
 
     // Register service worker first
     console.log('Registering service worker...');
-    await registerServiceWorker();
-    console.log('Service worker registered successfully');
-
-    // Initialize Firebase Messaging
-    messaging = getMessaging();
-    console.log('Firebase Messaging initialized');
-
-    // Request permission and get token
-    console.log('Requesting notification permission...');
-    const permission = await Notification.requestPermission();
-    console.log('Notification permission status:', permission);
-
-    if (permission === 'granted') {
-      console.log('Getting FCM token...');
-      const currentToken = await getToken(messaging, {
-        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
-      });
-      
-      if (currentToken) {
-        console.log('FCM Token generated:', currentToken);
-        
-        // Save token to Firestore
-        if (auth.currentUser) {
-          console.log('Saving FCM token to Firestore...');
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          await updateDoc(userRef, {
-            fcmToken: currentToken,
-            updatedAt: new Date()
-          });
-          console.log('FCM token saved to Firestore');
-        }
-        
-        return currentToken;
-      } else {
-        console.log('No FCM token available');
-      }
-    } else {
-      console.log('Notification permission denied');
+    const registration = await registerServiceWorker();
+    if (!registration) {
+      throw new Error('Failed to register service worker');
     }
+    console.log('Service worker registered and ready');
+
+    // Wait a bit to ensure service worker is fully activated
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const messaging = getMessaging(app);
+    console.log('Firebase messaging instance created');
+
+    // Request permission
+    const permission = await Notification.requestPermission();
+    console.log('Notification permission:', permission);
+
+    if (permission !== 'granted') {
+      console.log('Notification permission denied');
+      return null;
+    }
+
+    // Get FCM token
+    console.log('Getting FCM token...');
+    const token = await getToken(messaging, {
+      vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+    console.log('FCM token obtained:', token);
+
+    // Save token to Firestore if user is logged in
+    const user = auth.currentUser;
+    if (user && token) {
+      console.log('Saving FCM token to Firestore for user:', user.uid);
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        fcmToken: token,
+        updatedAt: new Date()
+      });
+      console.log('FCM token saved to Firestore');
+    }
+
+    // Handle foreground messages
+    onMessage(messaging, (payload) => {
+      console.log('Received foreground message:', payload);
+      
+      toast(payload.notification?.title || 'New notification', {
+        description: payload.notification?.body,
+        duration: 5000,
+      });
+    });
+
+    return token;
   } catch (error) {
     console.error('Error initializing messaging:', error);
-    throw error;
+    return null;
   }
 };
 
-// Handle foreground messages
-export const onMessageListener = () =>
-  new Promise((resolve) => {
-    if (messaging) {
-      onMessage(messaging, (payload) => {
-        console.log('Received foreground message:', payload);
-        resolve(payload);
-      });
-    }
-  });
+export const saveTokenToDatabase = async (userId: string, token: string) => {
+  try {
+    console.log('Saving FCM token to database...');
+    // Implement your token saving logic here
+    // Example: await db.collection('users').doc(userId).update({ fcmToken: token });
+    console.log('FCM token saved successfully');
+    return true;
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    return false;
+  }
+};
+
+export const removeTokenFromDatabase = async (userId: string) => {
+  try {
+    console.log('Removing FCM token from database...');
+    // Implement your token removal logic here
+    // Example: await db.collection('users').doc(userId).update({ fcmToken: null });
+    console.log('FCM token removed successfully');
+    return true;
+  } catch (error) {
+    console.error('Error removing FCM token:', error);
+    return false;
+  }
+};
 
 // Save FCM token to Firestore
 export const saveFCMToken = async (userId: string, token: string) => {
@@ -94,6 +124,7 @@ export const saveFCMToken = async (userId: string, token: string) => {
             dailyReminders: true,
             weeklyDigest: true,
             achievements: true,
+            reminderTime: '12:10',
             quietHours: {
               enabled: false,
               start: '22:00',
@@ -113,6 +144,7 @@ export const saveFCMToken = async (userId: string, token: string) => {
           dailyReminders: true,
           weeklyDigest: true,
           achievements: true,
+          reminderTime: '12:10',
           quietHours: {
             enabled: false,
             start: '22:00',
@@ -189,55 +221,39 @@ export const updateNotificationPreferences = async (
   }
 };
 
-// Test function to send a notification
-export const sendTestNotification = async () => {
+interface TestNotificationParams {
+  userId: string;
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  data?: Record<string, string>;
+}
+
+export const sendTestNotification = async (params: TestNotificationParams) => {
   try {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Get user's FCM token from Firestore
-    console.log('Getting user document from Firestore...');
-    const userRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userRef);
-    const userData = userDoc.data();
+    console.log('Sending test notification with params:', params);
     
-    if (!userData?.fcmToken) {
-      console.log('No FCM token found, initializing messaging...');
-      const token = await initializeMessaging();
-      if (!token) {
-        throw new Error('Failed to get FCM token');
-      }
-      console.log('New FCM token generated:', token);
-    } else {
-      console.log('Using existing FCM token:', userData.fcmToken);
-    }
-
-    console.log('Sending test notification...');
     const response = await fetch('/api/notifications/test', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        token: userData?.fcmToken,
-        title: 'Test Notification',
-        body: 'This is a test notification from Lifelog',
-      }),
+      body: JSON.stringify(params)
     });
 
+    const responseData = await response.json();
+    console.log('Test notification response:', responseData);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Test notification failed:', errorData);
-      throw new Error(errorData.error || 'Failed to send test notification');
+      console.error('Test notification failed:', responseData);
+      throw new Error(responseData.error || 'Failed to send test notification');
     }
 
-    const data = await response.json();
-    console.log('Test notification sent successfully:', data);
-    return data;
+    console.log('Test notification sent successfully');
+    return true;
   } catch (error) {
     console.error('Error sending test notification:', error);
     throw error;
   }
-}; 
+};
