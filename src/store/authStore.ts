@@ -176,14 +176,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = userCredential.user;
 
       try {
-        // Set displayName in Firebase Auth profile
-        await updateProfile(user, { displayName: name });
+      // Set displayName in Firebase Auth profile
+      await updateProfile(user, { displayName: name });
         
         // Send verification email
         await sendEmailVerification(user);
         set({ verificationEmailSent: true });
 
-        // Create user document
+      // Create user document
         await createUserDocument(user, name);
 
         // Sign out the user until they verify their email
@@ -238,11 +238,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Update last login time
       try {
-        const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
           lastLogin: serverTimestamp(),
           emailVerified: user.emailVerified
-        });
+      });
       } catch (updateError) {
         console.error('Error updating last login:', updateError);
         // Don't throw error here, as the user is still signed in

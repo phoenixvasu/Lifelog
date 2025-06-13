@@ -93,9 +93,9 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
               </Link>
-              <button className="w-full sm:w-auto text-gray-600 hover:text-gray-800 font-medium transition-colors py-3">
+              {/* <button className="w-full sm:w-auto text-gray-600 hover:text-gray-800 font-medium transition-colors py-3">
                 View Demo →
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

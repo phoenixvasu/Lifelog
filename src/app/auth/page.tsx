@@ -101,6 +101,9 @@ function AuthPageContent() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (error) {
+      clearError();
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -122,8 +125,10 @@ function AuthPageContent() {
         <Button
           variant="outline"
           onClick={() => {
+            clearError();
             clearVerificationEmailSent();
             setIsLogin(true);
+            setFormData({ email: '', password: '', name: '' });
           }}
           className="w-full"
         >
@@ -205,6 +210,10 @@ function AuthPageContent() {
   };
 
   const renderForm = () => {
+    useEffect(() => {
+      clearError();
+    }, [isLogin, isResetPassword, verificationEmailSent, resetEmailSent]);
+
     if (verificationEmailSent) {
       return renderVerificationSent();
     }
