@@ -45,7 +45,9 @@ const quotes = [
 // Function to get a quote based on the current date
 export const getDailyQuote = () => {
   const today = new Date();
-  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+  const startOfYear = new Date(today.getFullYear(), 0, 0);
+  const diff = today.getTime() - startOfYear.getTime();
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
   const quoteIndex = dayOfYear % quotes.length;
   return quotes[quoteIndex];
 };
