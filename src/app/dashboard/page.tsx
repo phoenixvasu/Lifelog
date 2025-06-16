@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DailyQuote } from '@/components/DailyQuote';
 
 type TimeFilter = '1d' | '1w' | '1m' | '1y' | 'all';
 type MoodFilter = '1' | '2' | '3' | '4' | '5' | 'all';
