@@ -7,7 +7,6 @@
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Architecture](#architecture)
 - [Features](#features)
 - [Screenshots](#screenshots)
 - [Project Structure](#project-structure)
@@ -42,25 +41,6 @@ Lifelog is designed for anyone who wants to:
 - Mental health and mood tracking
 - Memory keeping and gratitude journaling
 - Data-driven insights into your emotional journey
-
----
-
-## Architecture
-
-```mermaid
-flowchart TD
-    A[User Interface (Next.js/React)] -->|Auth, Journal, Mood| B(Firebase Auth & Firestore)
-    B --> C[Zustand State Management]
-    B --> D[Firestore Database]
-    A --> E[Tailwind CSS Styling]
-    A --> F[Data Visualization (Recharts, D3-cloud)]
-    B --> G[Firebase Admin SDK (API routes)]
-    G --> D
-    subgraph Hosting
-      H[Vercel]
-    end
-    A --> H
-```
 
 ---
 
