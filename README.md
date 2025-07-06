@@ -8,7 +8,6 @@
 
 - [Introduction](#introduction)
 - [Features](#features)
-- [Screenshots](#screenshots)
 - [Project Structure](#project-structure)
 - [Folder-by-Folder Breakdown](#folder-by-folder-breakdown)
 - [Core Functionalities](#core-functionalities)
@@ -69,16 +68,6 @@ Lifelog is designed for anyone who wants to:
 - **Data Import/Export:**
   - Backup and restore your data with ease
   - Local storage backup for extra safety
-
----
-
-## Screenshots
-
-> _Add your own screenshots here!_
-
-| Dashboard                               | Mood Graph                                | Word Cloud                                |
-| --------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| ![Dashboard](screenshots/dashboard.png) | ![Mood Graph](screenshots/mood-graph.png) | ![Word Cloud](screenshots/word-cloud.png) |
 
 ---
 
