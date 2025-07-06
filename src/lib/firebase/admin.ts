@@ -22,4 +22,4 @@ if (!apps.length) {
 }
 
 export const adminAuth = getAuth();
-export const adminDb = getFirestore(); 
+export const adminDb = getFirestore();

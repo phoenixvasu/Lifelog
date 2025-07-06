@@ -280,14 +280,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw new Error('Please enter a valid email address.');
       }
 
-      // Check if email exists
-      const methods = await fetchSignInMethodsForEmail(auth, email);
-      if (!methods || methods.length === 0) {
-        throw new Error('No account found with this email. Please sign up first.');
-      }
-
       await sendPasswordResetEmail(auth, email);
       set({ loading: false });
+      // Optionally: set a success message here
     } catch (error) {
       console.error('Reset password error:', error);
       set({ error: handleAuthError(error), loading: false });
