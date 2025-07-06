@@ -6,8 +6,12 @@
 
 ## Table of Contents
 
+- [Introduction](#introduction)
+- [Architecture](#architecture)
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [Project Structure](#project-structure)
+- [Folder-by-Folder Breakdown](#folder-by-folder-breakdown)
 - [Core Functionalities](#core-functionalities)
 - [Tech Stack](#tech-stack)
 - [Firebase Integration](#firebase-integration)
@@ -16,20 +20,85 @@
 - [Environment Variables](#environment-variables)
 - [Scripts](#scripts)
 - [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
 - [License](#license)
+
+---
+
+## Introduction
+
+Lifelog is designed for anyone who wants to:
+
+- Build a daily journaling habit with minimal effort
+- Track their moods and emotional patterns over time
+- Visualize their most meaningful words and memories
+- Keep their data private, secure, and always accessible
+
+**Use Cases:**
+
+- Personal reflection and self-improvement
+- Mental health and mood tracking
+- Memory keeping and gratitude journaling
+- Data-driven insights into your emotional journey
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TD
+    A[User Interface (Next.js/React)] -->|Auth, Journal, Mood| B(Firebase Auth & Firestore)
+    B --> C[Zustand State Management]
+    B --> D[Firestore Database]
+    A --> E[Tailwind CSS Styling]
+    A --> F[Data Visualization (Recharts, D3-cloud)]
+    B --> G[Firebase Admin SDK (API routes)]
+    G --> D
+    subgraph Hosting
+      H[Vercel]
+    end
+    A --> H
+```
 
 ---
 
 ## Features
 
-- **Sentence-a-Day Journaling:** Capture your thoughts in just one meaningful sentence each day.
-- **Mood Tracking & Graphs:** Visualize your emotional patterns and growth over time.
-- **Word Cloud Memory Maps:** See your most meaningful words transform into beautiful clouds.
-- **Private & Secure:** All data is encrypted and only accessible to you.
-- **Downloadable Data:** Export your entire journal as JSON—your data, your control.
+- **Sentence-a-Day Journaling:**
+  - Add a single, meaningful sentence each day
+  - Entries are timestamped and associated with your account
+  - Easy, low-friction journaling for busy lives
+- **Mood Tracking & Graphs:**
+  - Select your mood for each entry (e.g., Happy, Sad, Neutral, etc.)
+  - Visualize mood trends over time with interactive graphs
+  - Filter mood history by time period and mood type
+- **Word Cloud Memory Maps:**
+  - See your most-used and meaningful words as a word cloud
+  - Gain insights into recurring themes in your journal
+- **Private & Secure:**
+  - All data is encrypted and only accessible to you
+  - Strict Firestore security rules
+- **Downloadable Data:**
+  - Export your entire journal as a JSON backup
+  - Import data from a backup file
+- **Theme Support:**
+  - Light and dark mode for comfortable journaling at any time
+  - Theme preference saved per user
+- **Data Import/Export:**
+  - Backup and restore your data with ease
+  - Local storage backup for extra safety
 
-- **Theme Support:** Light and dark mode for comfortable journaling at any time.
-- **Data Import/Export:** Backup and restore your data with ease.
+---
+
+## Screenshots
+
+> _Add your own screenshots here!_
+
+| Dashboard                               | Mood Graph                                | Word Cloud                                |
+| --------------------------------------- | ----------------------------------------- | ----------------------------------------- |
+| ![Dashboard](screenshots/dashboard.png) | ![Mood Graph](screenshots/mood-graph.png) | ![Word Cloud](screenshots/word-cloud.png) |
 
 ---
 
@@ -52,7 +121,6 @@
 │   │   ├── MoodGraph.tsx        # Mood graph visualization
 │   │   ├── ui/                  # Reusable UI components (Card, Button, Toast, etc.)
 │   │   ├── settings/            # Settings-related components
-
 │   │   ├── auth/                # Auth UI components
 │   │   ├── shared/              # Shared UI components
 │   │   ├── mood/                # Mood-related components
@@ -60,10 +128,8 @@
 │   │   └── dashboard/           # Dashboard widgets
 │   ├── lib/
 │   │   ├── firebase/            # Firebase client and admin setup
-
 │   │   ├── hooks/               # Custom React hooks
 │   │   ├── utils/               # Utility functions (data management, etc.)
-
 │   ├── store/
 │   │   ├── authStore.ts         # Zustand store for authentication
 │   │   └── journalStore.ts      # Zustand store for journal entries
@@ -82,49 +148,65 @@
 
 ---
 
+## Folder-by-Folder Breakdown
+
+- **src/app/**: Next.js app directory, including routing, pages, and API endpoints
+- **src/components/**: All React components, organized by feature and UI type
+- **src/lib/firebase/**: Firebase client and admin SDK setup
+- **src/lib/hooks/**: Custom React hooks for state and logic reuse
+- **src/lib/utils/**: Utility functions for data management, formatting, etc.
+- **src/store/**: Zustand state management stores for authentication and journaling
+- **src/types/**: TypeScript type definitions for strong typing
+- **src/context/**: React context providers for global state
+- **src/styles/**: Additional global and component styles
+- **public/**: Static assets, icons, manifest, etc.
+- **functions/**: Firebase Cloud Functions (backend logic)
+
+---
+
 ## Core Functionalities
 
 ### 1. **Authentication**
 
-- Email/password sign-up and login via Firebase Auth.
-- Secure user session management.
-- Password reset and error handling.
+- Email/password sign-up and login via Firebase Auth
+- Secure user session management
+- Password reset and error handling
 
 ### 2. **Journaling**
 
-- Add a daily journal entry (one sentence per day).
-- Entries are timestamped and associated with the user.
-- Entries stored securely in Firestore.
+- Add a daily journal entry (one sentence per day)
+- Entries are timestamped and associated with the user
+- Entries stored securely in Firestore
 
 ### 3. **Mood Tracking**
 
-- Select a mood for each day (e.g., Happy, Sad, Neutral, etc.).
-- Mood data visualized in graphs and statistics.
-- Mood history filterable by time and mood type.
+- Select a mood for each day (e.g., Happy, Sad, Neutral, etc.)
+- Mood data visualized in graphs and statistics
+- Mood history filterable by time and mood type
 
 ### 4. **Word Cloud Visualization**
 
-- Journal content is analyzed to generate a word cloud.
-- Highlights most-used and meaningful words.
+- Journal content is analyzed to generate a word cloud
+- Highlights most-used and meaningful words
 
 ### 5. **Dashboard**
 
-- Personalized dashboard with greeting, stats, and quick actions.
-- Recent entries and mood trends displayed.
-- Data filtering by time period and mood.
+- Personalized dashboard with greeting, stats, and quick actions
+- Recent entries and mood trends displayed
+- Data filtering by time period and mood
 
 ### 6. **Settings**
 
-- Export all user data as a JSON backup.
-- Import data from a backup file.
-- Clear local storage backup.
-- Manage theme preferences.
+- Export all user data as a JSON backup
+- Import data from a backup file
+- Clear local storage backup
+- Manage theme preferences
 
 ### 7. **Security & Privacy**
 
-- All data is private to the user.
-- Firestore security rules enforce user-based access.
-- No public data exposure.
+- All data is private to the user
+- Firestore security rules enforce user-based access
+- No public data exposure
 
 ---
 
@@ -133,29 +215,28 @@
 - **Frontend:** Next.js 14 (App Router), React 18, TypeScript
 - **Styling:** Tailwind CSS, custom themes, dark/light mode
 - **State Management:** Zustand
-- **Backend:** Firebase (Auth, Firestore, Cloud Functions, FCM)
+- **Backend:** Firebase (Auth, Firestore, Cloud Functions)
 - **Data Visualization:** Recharts, D3-cloud
 - **UI Components:** Radix UI, custom components
-
 - **Deployment:** Vercel
 
 ---
 
 ## Firebase Integration
 
-- **Client SDK:** Used for authentication, Firestore, and messaging in the browser.
-- **Admin SDK:** Used in API routes and server-side logic for secure operations.
-- **Cloud Functions:** (Optional) for backend automation.
-- **Security Rules:** Strict Firestore rules to ensure data privacy and integrity.
+- **Client SDK:** Used for authentication and Firestore in the browser
+- **Admin SDK:** Used in API routes and server-side logic for secure operations
+- **Cloud Functions:** (Optional) for backend automation
+- **Security Rules:** Strict Firestore rules to ensure data privacy and integrity
 
 ---
 
 ## Security
 
-- **Firestore Rules:** Only authenticated users can read/write their own data.
-- **Environment Variables:** Sensitive keys are never exposed to the client.
-- **Data Encryption:** All data in transit and at rest is encrypted by Firebase.
-- **Session Management:** Secure session handling via Firebase Auth.
+- **Firestore Rules:** Only authenticated users can read/write their own data
+- **Environment Variables:** Sensitive keys are never exposed to the client
+- **Data Encryption:** All data in transit and at rest is encrypted by Firebase
+- **Session Management:** Secure session handling via Firebase Auth
 
 ---
 
@@ -223,13 +304,60 @@ See the [Setup & Installation](#setup--installation) section for required variab
 
 ## Contributing
 
-Contributions are welcome! Please open issues and pull requests for new features, bug fixes, or improvements.
+We welcome contributions! To get started:
+
+1. Fork this repository
+2. Create a new branch for your feature or bugfix
+3. Make your changes and commit them with clear messages
+4. Push your branch to your fork
+5. Open a pull request describing your changes
+
+**Development tips:**
+
+- Keep pull requests focused and small
+- Write clear commit messages
+- Add tests or documentation if relevant
 
 ---
 
-## License
+## Troubleshooting
 
-This project is licensed under the MIT License.
+- **App won't start?**
+  - Double-check your environment variables
+  - Run `npm install` to ensure all dependencies are installed
+- **Firebase errors?**
+  - Make sure your Firebase project credentials are correct
+  - Check Firestore rules for access issues
+- **Build errors?**
+  - Run `npm run lint` to check for code issues
+  - Ensure your Node.js version matches the project requirements
+
+---
+
+## FAQ
+
+**Q: Is my data private?**
+A: Yes! All your data is private, encrypted, and only accessible to you.
+
+**Q: Can I export my data?**
+A: Yes, you can export your entire journal as a JSON backup from the settings page.
+
+**Q: Can I use this app on mobile?**
+A: Yes, Lifelog is fully responsive and works on all modern devices.
+
+**Q: How do I reset my password?**
+A: Use the "Forgot Password" link on the login page to reset your password via email.
+
+---
+
+## Roadmap
+
+- [ ] Add multi-language support
+- [ ] Add reminders/notifications (if needed in the future)
+- [ ] Add more data visualization options
+- [ ] Add social sharing/export to PDF
+- [ ] Improve accessibility and keyboard navigation
+- [ ] Add more journaling prompts and templates
 
 ---
 
