@@ -119,18 +119,7 @@ const createUserDocument = async (user: User, name: string) => {
     emailVerified: user.emailVerified,
     lastLogin: serverTimestamp(),
     preferences: {
-      theme: 'light',
-      notifications: {
-        enabled: false,
-        dailyReminders: false,
-        weeklyDigest: false,
-        achievements: false,
-        quietHours: {
-          enabled: false,
-          start: '22:00',
-          end: '07:00'
-        }
-      }
+      theme: 'light'
     }
   };
 

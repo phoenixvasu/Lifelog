@@ -48,12 +48,6 @@ function AuthPageContent() {
     }
   }, [user, router]);
 
-  useEffect(() => {
-    if (error) {
-      // Removed toast notification for authentication error
-    }
-  }, [error]);
-
   // Handle email verification
   useEffect(() => {
     const actionCode = searchParams.get('oobCode');

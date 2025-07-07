@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase/config';
 import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 
 export interface JournalEntry {

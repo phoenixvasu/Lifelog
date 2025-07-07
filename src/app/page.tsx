@@ -49,11 +49,6 @@ export default function Home() {
       icon: <Download className="w-6 h-6" />,
       title: 'Downloadable Data',
       description: 'Export your entire journal as JSON. Your data, your control.'
-    },
-    {
-      icon: <Bell className="w-6 h-6" />,
-      title: 'Gentle Daily Reminders',
-      description: 'Soft nudges to help you maintain your daily reflection habit.'
     }
   ];
 
